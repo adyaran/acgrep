@@ -1,0 +1,28 @@
+﻿OS: Microsoft Windows 11 Home
+CPU: AMD Ryzen 5 7600X 6-Core Processor              (12 logical cores)
+PowerShell: 5.1.26100.9444
+acgrep: C:\Users\alexm\source\repos\acgrep\out\build\x64-release\acgrep\acgrep.exe
+grep: C:\Program Files\Git\usr\bin\grep.exe
+Input: 50000037 bytes, best of 3 runs
+
+
+Patterns Tool       Seconds  Lines Agrees Note
+-------- ----       -------  ----- ------ ----
+       1 acgrep     0.42      1047 yes        
+       1 grep -F    0.19      1047 yes        
+       1 findstr /L 0.07      1047 yes        
+      10 acgrep     0.44      5472 yes        
+      10 grep -F    0.28      5472 yes        
+      10 findstr /L 0.52      5472 yes        
+     100 acgrep     0.74     56163 yes        
+     100 grep -F    0.58     56163 yes        
+     100 findstr /L 3.29     56163 yes        
+    1000 acgrep     2.56    338521 yes        
+    1000 grep -F    0.83    338521 yes        
+    1000 findstr /L 8.70    338521 yes        
+   10000 acgrep     3.81    447297 yes        
+   10000 grep -F    0.90    447297 yes        
+   10000 findstr /L 1.02    447297 yes        
+
+
+
