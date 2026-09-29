@@ -58,6 +58,40 @@ cmake -S . -B build
 cmake --build build
 ```
 
+## Using a release download
+
+Each release has one zip per platform: `windows-x64`, `linux-x64` and `macos-arm64`. Each zip contains the `acgrep` binary (`acgrep.exe` on Windows) and this README. It is a command-line tool, so run it from a terminal; double-clicking it does nothing useful. The examples below use `acgrep`, so from the unzipped folder call the binary by its path instead:
+
+| Platform      | Command                                              |
+| ------------- | ---------------------------------------------------- |
+| Windows       | `.\acgrep.exe --pattern-text "404" access.log`       |
+| Linux / macOS | `./acgrep --pattern-text "404" access.log`           |
+
+The `examples/` files are not in the zip. To try it, create a small log file in the same folder.
+
+Linux / macOS:
+
+```text
+printf 'PowerShell returned 404\ncmd.exe returned error\n' > access.log
+./acgrep --pattern-text "404" --pattern-text "cmd.exe" --count access.log
+```
+
+Windows (PowerShell):
+
+```text
+"PowerShell returned 404", "cmd.exe returned error" | Set-Content -Encoding ascii access.log
+.\acgrep.exe --pattern-text "404" --pattern-text "cmd.exe" --count access.log
+```
+
+Both print:
+
+```text
+access.log: 404: 1
+access.log: cmd.exe: 1
+```
+
+If you get a permission error on Linux or macOS, run `chmod +x acgrep`. Running with no arguments prints the usage message and exits with status 2.
+
 ## Usage
 
 ```text
