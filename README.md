@@ -1,6 +1,6 @@
 # acgrep
 
-A small grep-style command-line tool that searches text for many patterns at once using the Aho–Corasick algorithm. All patterns are compiled into one automaton, then each input line is scanned in a single pass, so search time does not grow with the number of patterns.
+A small grep-style command-line tool that searches text for many patterns at once using the Aho–Corasick algorithm. All patterns are compiled into one automaton, then each input line is scanned in a single pass, with matching time proportional to the input length plus the matches reported.
 
 ## Files
 
@@ -27,9 +27,15 @@ acgrep/
 | `examples/`                                  | Sample input files used in the examples below |
 | `tests/test_aho_corasick.cpp`                | Automaton unit tests                          |
 
-## Building
+## Requirements
 
-Requires CMake 3.21+ (3.20 works if you skip presets) and a C++20 compiler.
+* CMake 3.21+ (3.20 works if you skip presets)
+* A C++20 compiler
+* Git, if building from the repository
+
+These are only needed to build from source; a [release download](#using-a-release-download) needs none of them.
+
+## Building
 
 | Platform                                     | Configure presets                                      |
 | -------------------------------------------- | ------------------------------------------------------ |
@@ -60,7 +66,13 @@ cmake --build build
 
 ## Using a release download
 
-Each release has one zip per platform: `windows-x64`, `linux-x64` and `macos-arm64`. Each zip contains the `acgrep` binary (`acgrep.exe` on Windows) and this README. It is a command-line tool, so run it from a terminal; double-clicking it does nothing useful. The examples below use `acgrep`, so from the unzipped folder call the binary by its path instead:
+Each release has one zip per platform:
+
+* `windows-x64`: Windows, x86-64
+* `linux-x64`: Linux, x86-64
+* `macos-arm64`: macOS on Apple Silicon (M-series)
+
+There is no Intel macOS build; on an Intel Mac, build from source as described above. Each zip contains the `acgrep` binary (`acgrep.exe` on Windows) and this README. It is a command-line tool, so run it from a terminal; double-clicking it does nothing useful. The examples below use `acgrep`, so from the unzipped folder call the binary by its path instead:
 
 | Platform      | Command                                              |
 | ------------- | ---------------------------------------------------- |
@@ -238,10 +250,10 @@ cat examples/access.log | acgrep --pattern-text "404" -
 The automaton is a trie over bytes with a full 256-entry transition table per node.
 
 1. **Insert.** `addPattern` adds a pattern to the trie and records its index in the output list of the node where it ends. Duplicate patterns simply add a second index to the same node.
-2. **Build.** `build` walks the trie breadth-first. For each node it sets the failure link, appends the failure node's outputs to its own, and fills missing transitions from the failure node. Afterwards the automaton is a complete state machine, so searching never has to follow a failure link.
+2. **Build.** `build` processes the trie nodes breadth-first. For each node it sets the failure link, appends the failure node's outputs to its own, and fills missing transitions from the failure node. Afterwards the automaton is a complete state machine, so searching never has to follow a failure link.
 3. **Search.** `search` walks the text once, moving one state per byte and emitting a match for every pattern index in the current node's output list.
 
-Building takes O(total pattern length × 256) time. Searching takes O(text length + number of matches).
+Building takes O(P × 256) time, where P is the total number of pattern bytes: every trie node has 256 transitions to fill, and the 256 comes from this dense-table representation, not from Aho–Corasick itself. Searching takes O(T + M) time, where T is the text length and M is the number of matches reported. The automaton uses O(N × 256) space for N trie nodes, plus the stored output indices.
 
 The class checks how it is used: `search` before `build` and `addPattern` after `build` throw `std::logic_error`, and an empty pattern throws `std::invalid_argument`. Calling `build` twice is harmless.
 
