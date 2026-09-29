@@ -1,0 +1,52 @@
+name: release
+
+# Runs when a version tag such as v1.0.0 is pushed.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows-x64
+            bin: build/acgrep/Release/acgrep.exe
+          - os: ubuntu-latest
+            name: linux-x64
+            bin: build/acgrep/acgrep
+          - os: macos-latest
+            name: macos-arm64
+            bin: build/acgrep/acgrep
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir dist
+          cp "${{ matrix.bin }}" README.md dist/
+          cmake -E tar cf "acgrep-${{ github.ref_name }}-${{ matrix.name }}.zip" --format=zip dist
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: acgrep-*.zip
+          generate_release_notes: true
