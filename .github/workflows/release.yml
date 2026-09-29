@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -46,7 +46,7 @@ jobs:
           cmake -E tar cf "acgrep-${{ github.ref_name }}-${{ matrix.name }}.zip" --format=zip dist
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: acgrep-*.zip
           generate_release_notes: true
