@@ -2,17 +2,27 @@
 
 A small grep-style command-line tool that searches text for many patterns at once using the Aho–Corasick algorithm. All patterns are compiled into one automaton, then each input line is scanned in a single pass, with matching time proportional to the input length plus the matches reported.
 
+It was written for UTS Advanced Algorithms 41052, Programming Assignment 1 (Track B: implementation plus a working tool). The written report is [`finalreport.pdf`](finalreport.pdf).
+
 ## Files
 
 ```text
 acgrep/
 ├── CMakeLists.txt
 ├── CMakePresets.json
+├── finalreport.pdf
 ├── acgrep/
 │   ├── CMakeLists.txt
 │   ├── acgrep.cpp
 │   ├── aho_corasick.cpp
 │   └── aho_corasick.h
+├── bench/
+│   ├── README.md
+│   ├── bench.ps1
+│   ├── readtest.cpp
+│   ├── readtest.exe
+│   ├── results.txt
+│   └── data/
 ├── examples/
 │   ├── access.log
 │   └── patterns.txt
@@ -24,7 +34,9 @@ acgrep/
 | -------------------------------------------- | --------------------------------------------- |
 | `acgrep/aho_corasick.h` / `aho_corasick.cpp` | Aho–Corasick automaton                        |
 | `acgrep/acgrep.cpp`                          | Command-line interface                        |
+| `bench/`                                     | Benchmark script, diagnostic and results (see [Benchmarks](#benchmarks)); `bench/data/` holds generated benchmark inputs |
 | `examples/`                                  | Sample input files used in the examples below |
+| `finalreport.pdf`                            | Written report for the assignment             |
 | `tests/test_aho_corasick.cpp`                | Automaton unit tests                          |
 
 ## Requirements
@@ -72,7 +84,7 @@ Each release has one zip per platform:
 * `linux-x64`: Linux, x86-64
 * `macos-arm64`: macOS on Apple Silicon (M-series)
 
-There is no Intel macOS build; on an Intel Mac, build from source as described above. Each zip contains the `acgrep` binary (`acgrep.exe` on Windows) and this README. It is a command-line tool, so run it from a terminal; double-clicking it does nothing useful. The examples below use `acgrep`, so from the unzipped folder call the binary by its path instead:
+There is no Intel macOS build; on an Intel Mac, build from source as described above. Each zip contains the `acgrep` binary (`acgrep.exe` on Windows) and this README. It is a command-line tool, so run it from a terminal. The examples below use `acgrep`, so from the unzipped folder call the binary by its path instead:
 
 | Platform      | Command                                              |
 | ------------- | ---------------------------------------------------- |
@@ -253,19 +265,34 @@ The automaton is a trie over bytes with a full 256-entry transition table per no
 2. **Build.** `build` processes the trie nodes breadth-first. For each node it sets the failure link, appends the failure node's outputs to its own, and fills missing transitions from the failure node. Afterwards the automaton is a complete state machine, so searching never has to follow a failure link.
 3. **Search.** `search` walks the text once, moving one state per byte and emitting a match for every pattern index in the current node's output list.
 
-Building takes O(P × 256) time, where P is the total number of pattern bytes: every trie node has 256 transitions to fill, and the 256 comes from this dense-table representation, not from Aho–Corasick itself. Searching takes O(T + M) time, where T is the text length and M is the number of matches reported. The automaton uses O(N × 256) space for N trie nodes, plus the stored output indices.
+Building takes O(N × 256) time for N trie nodes, where N ≤ P + 1 and P is the total number of pattern bytes, so it is O(P × 256), or O(P) if 256 is treated as a constant. Every trie node has 256 transitions to fill, and the 256 comes from this dense-table representation, not from Aho–Corasick itself. The constant matters in practice. Searching takes O(T + M) time, where T is the text length and M is the number of matches reported. The automaton uses O(N × 256) space for N trie nodes, plus the stored output indices.
 
 The class checks how it is used: `search` before `build` and `addPattern` after `build` throw `std::logic_error`, and an empty pattern throws `std::invalid_argument`. Calling `build` twice is harmless.
 
 ## Testing
 
-Unit tests for the automaton are in `tests/test_aho_corasick.cpp`. Run them with `ctest --preset <preset>`, or run `acgrep_tests` directly.
+There are 27 unit tests for the automaton in `tests/test_aho_corasick.cpp`. Run them with `ctest --preset <preset>`, or run `acgrep_tests` directly.
 
 The tests use a `CHECK` macro instead of `assert`, so they still run in Release builds, where `NDEBUG` removes every `assert`.
 
 They cover the classic Aho–Corasick example, overlapping matches, suffix and prefix relationships, shared prefixes, text edges, punctuation, case sensitivity, non-ASCII bytes, duplicate patterns, empty patterns, and build-state errors.
 
-Command-line behaviour was also tested manually, including exit codes, pattern files, duplicate patterns, multiple input files, standard input, option handling, conflicting options, missing files and CRLF input.
+Command-line behaviour was tested manually, including exit codes, pattern files, duplicate patterns, multiple input files, standard input, option handling, conflicting options, missing files and CRLF input. There are no automated tests of the command-line tool itself; the report lists adding them as future work.
+
+## Benchmarks
+
+The `bench/` folder compares acgrep with `grep -F` and `findstr /L` on a generated 50 MB log, using pattern sets of 1 to 10,000 patterns. See [`bench/README.md`](bench/README.md) for how to run it and [`finalreport.pdf`](finalreport.pdf) for the full analysis.
+
+Summary of what the report found:
+
+* acgrep found the same matching lines as `grep -F` wherever the two were compared (line counts only on Windows, line numbers and text on Linux).
+* On Windows, acgrep was 1.3 to 4.2 times slower than `grep -F`. It is not competitive on speed.
+* At 10,000 patterns, tests on Linux point to the number of matches, rather than the size of the automaton, as the main cost. This was not repeated on Windows.
+* The Windows measurements were run by the project author. The Linux benchmark was run by Claude, and its scripts and results are not in this repository.
+
+## Report and AI use
+
+The report, [`finalreport.pdf`](finalreport.pdf), describes the implementation, the tool, the benchmarks, what was learned and how AI tools were used. Claude was used extensively (repository and release workflow, code, tests, benchmark scripts, and drafting and revising the report), and ChatGPT was tried for comparison. Section 4 of the report covers where the AI was wrong and what was and was not verified.
 
 ## Limitations
 
@@ -274,3 +301,13 @@ Command-line behaviour was also tested manually, including exit codes, pattern f
 * Patterns are literal substrings; regular expressions and word boundaries are not supported.
 * The dense transition table (about 1 KB per trie node) uses far more memory than a sparse representation for very large pattern sets.
 * Match positions within a line are `int`, so a single line longer than about 2 GB is not supported.
+* Input is read and searched one line at a time, so a match never crosses a line. A binary signature containing the byte `0x0A` would never be found, and a pattern file cannot contain a newline byte.
+* Plain mode still collects every match on a line even though one is enough to print it, which slows large pattern sets that match almost every line.
+* There are no automated tests of the command-line tool.
+
+## Possible future work
+
+* An early-exit path in plain mode.
+* Block-based reading instead of line-by-line input.
+* Automated tests of the command-line tool, run through CTest.
+* A raw-byte mode, with patterns given as hex, for binary signatures.
