@@ -20,9 +20,7 @@ acgrep/
 │   ├── README.md
 │   ├── bench.ps1
 │   ├── readtest.cpp
-│   ├── readtest.exe
-│   ├── results.txt
-│   └── data/
+│   └── results.txt
 ├── examples/
 │   ├── access.log
 │   └── patterns.txt
@@ -34,7 +32,7 @@ acgrep/
 | -------------------------------------------- | --------------------------------------------- |
 | `acgrep/aho_corasick.h` / `aho_corasick.cpp` | Aho–Corasick automaton                        |
 | `acgrep/acgrep.cpp`                          | Command-line interface                        |
-| `bench/`                                     | Benchmark script, diagnostic and results (see [Benchmarks](#benchmarks)); `bench/data/` holds generated benchmark inputs |
+| `bench/`                                     | Benchmark script, diagnostic and results (see [Benchmarks](#benchmarks)) |
 | `examples/`                                  | Sample input files used in the examples below |
 | `finalreport.pdf`                            | Written report for the assignment             |
 | `tests/test_aho_corasick.cpp`                | Automaton unit tests                          |
@@ -281,7 +279,7 @@ Command-line behaviour was tested manually, including exit codes, pattern files,
 
 ## Benchmarks
 
-The `bench/` folder compares acgrep with `grep -F` and `findstr /L` on a generated 50 MB log, using pattern sets of 1 to 10,000 patterns. See [`bench/README.md`](bench/README.md) for how to run it and [`finalreport.pdf`](finalreport.pdf) for the full analysis.
+The `bench/` folder compares acgrep with `grep -F` and `findstr /L` on a generated 50 MB log, using pattern sets of 1 to 10,000 patterns. See [`bench/README.md`](bench/README.md) for how to run it and for how to build the `readtest.cpp` diagnostic, and [`finalreport.pdf`](finalreport.pdf) for the full analysis. The benchmark inputs (`bench/data/`) and compiled `.exe` files are not tracked; `bench/bench.ps1` regenerates the data on its first run.
 
 Summary of what the report found:
 
